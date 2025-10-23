@@ -20,10 +20,12 @@ import {
   type BuildResponseAny,
   type EventField,
   type ListBuildsOptions,
+  type ListProjectSpanGroupsOptions,
   type ListReleasesOptions,
   type Project,
   ProjectAPI,
   type ReleaseResponseAny,
+  type SpanGroupSummary,
   type StabilityData,
 } from "./client/api/Project.js";
 import { Configuration, CurrentUserAPI, ErrorAPI } from "./client/index.js";
@@ -370,6 +372,13 @@ export class BugsnagClient implements Client {
       ...response,
       body: response.body.map((b) => this.addStabilityData(b, project)),
     };
+  }
+
+  async listProjectSpanGroups(
+    projectId: string,
+    options: ListProjectSpanGroupsOptions = {},
+  ): Promise<ApiResponse<SpanGroupSummary[]>> {
+    return await this.projectApi.listProjectSpanGroups(projectId, options);
   }
 
   private addStabilityData<T extends BuildResponseAny | ReleaseResponseAny>(
@@ -1238,6 +1247,139 @@ export class BugsnagClient implements Client {
         );
         return {
           content: [{ type: "text", text: JSON.stringify(response.body) }],
+        };
+      },
+    );
+
+    register(
+      {
+        title: "List Span Groups",
+        summary: "List span groups for a project to analyze performance traces",
+        purpose:
+          "Retrieve a list of span groups to understand performance characteristics and trace data for the project",
+        useCases: [
+          "Analyze performance bottlenecks by reviewing span group durations",
+          "Identify slow or error-prone operations in your application",
+          "Monitor performance trends across different span categories",
+          "Filter span groups by category or name to focus on specific areas of concern",
+        ],
+        parameters: [
+          ...(this.projectApiKey
+            ? []
+            : [
+                {
+                  name: "projectId",
+                  type: z.string(),
+                  description: "ID of the project to retrieve span groups for",
+                  required: true,
+                },
+              ]),
+          {
+            name: "category",
+            type: z.string(),
+            description: "Filter span groups by category (e.g., 'http', 'db', 'custom')",
+            required: false,
+            examples: ["http", "db", "custom", "file"],
+          },
+          {
+            name: "name",
+            type: z.string(),
+            description: "Filter span groups by name pattern",
+            required: false,
+            examples: ["GET /users", "database_query", "api_call"],
+          },
+          {
+            name: "sort",
+            type: z.string(),
+            description: "Field to sort by",
+            required: false,
+            examples: ["name", "category", "span_count", "error_count", "average_duration", "p95_duration"],
+          },
+          {
+            name: "order",
+            type: z.string(),
+            description: "Sort order: 'asc' for ascending, 'desc' for descending",
+            required: false,
+            examples: ["asc", "desc"],
+          },
+          {
+            name: "offset",
+            type: z.number(),
+            description: "Number of span groups to skip for pagination",
+            required: false,
+            examples: ["0", "10", "20"],
+          },
+          {
+            name: "limit",
+            type: z.number(),
+            description: "Maximum number of span groups to return (default 50, max 100)",
+            required: false,
+            examples: ["10", "25", "50", "100"],
+          },
+        ],
+        examples: [
+          {
+            description: "Get all span groups for a project",
+            parameters: {},
+            expectedOutput:
+              "JSON array of span group objects with performance metrics",
+          },
+          {
+            description: "Get HTTP-related span groups sorted by error count",
+            parameters: {
+              category: "http",
+              sort: "error_count",
+              order: "desc",
+              limit: 20,
+            },
+            expectedOutput:
+              "JSON array of HTTP span groups ordered by highest error count",
+          },
+          {
+            description: "Search for database span groups with pagination",
+            parameters: {
+              category: "db",
+              offset: 0,
+              limit: 10,
+            },
+            expectedOutput:
+              "JSON array of first 10 database-related span groups",
+          },
+        ],
+        hints: [
+          "Use category filtering to focus on specific types of operations (http, db, custom, etc.)",
+          "Sort by error_count or p95_duration to identify problematic span groups",
+          "Use pagination with offset and limit for large result sets",
+          "Span groups provide aggregated performance data for similar operations",
+        ],
+        readOnly: true,
+        idempotent: true,
+        outputFormat:
+          "JSON array of span group objects containing id, category, name, performance metrics (span_count, error_count, average_duration, p95_duration, p99_duration), and temporal data (first_seen, last_seen)",
+      },
+      async (args, _extra) => {
+        const project = await this.getInputProject(args.projectId);
+        const options: ListProjectSpanGroupsOptions = {};
+        
+        if (args.category) options.category = args.category;
+        if (args.name) options.name = args.name;
+        if (args.sort) options.sort = args.sort;
+        if (args.order) options.order = args.order;
+        if (args.offset !== undefined) options.offset = args.offset;
+        if (args.limit !== undefined) options.limit = args.limit;
+
+        const response = await this.listProjectSpanGroups(project.id, options);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                data: response.body,
+                count: response.body?.length || 0,
+              }),
+            },
+          ],
         };
       },
     );

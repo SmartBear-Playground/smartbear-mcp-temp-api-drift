@@ -236,6 +236,31 @@ export interface StabilityTargetData {
   updated_by_id: string;
 }
 
+// Span Groups
+export interface ListProjectSpanGroupsOptions {
+  category?: string;
+  name?: string;
+  sort?: string;
+  order?: string;
+  offset?: number;
+  limit?: number;
+}
+
+export interface SpanGroupSummary {
+  id: string;
+  category: string;
+  name: string;
+  first_seen: string;
+  last_seen: string;
+  span_count: number;
+  error_count: number;
+  average_duration: number;
+  p95_duration: number;
+  p99_duration: number;
+}
+
+export type ListProjectSpanGroupsResponse = SpanGroupSummary[];
+
 // --- API Class ---
 
 export class ProjectAPI extends BaseAPI {
@@ -285,6 +310,18 @@ export class ProjectAPI extends BaseAPI {
     "sessions_count_in_last_24h",
     "accumulative_daily_users_seen",
     "accumulative_daily_users_with_unhandled",
+  ];
+  static spanGroupFields: (keyof SpanGroupSummary)[] = [
+    "id",
+    "category",
+    "name",
+    "first_seen",
+    "last_seen",
+    "span_count",
+    "error_count",
+    "average_duration",
+    "p95_duration",
+    "p99_duration",
   ];
 
   constructor(configuration: Configuration) {
@@ -438,5 +475,43 @@ export class ProjectAPI extends BaseAPI {
       },
       true,
     );
+  }
+
+  /**
+   * List Span Groups on a Project
+   * GET /projects/{project_id}/span_groups
+   * @param projectId The project ID
+   * @param options Optional parameters for filtering and pagination
+   * @returns A promise that resolves to the list of span groups
+   */
+  async listProjectSpanGroups(
+    projectId: string,
+    options: ListProjectSpanGroupsOptions = {},
+  ): Promise<ApiResponse<SpanGroupSummary[]>> {
+    const params = new URLSearchParams();
+    
+    if (options.category) params.append("category", options.category);
+    if (options.name) params.append("name", options.name);
+    if (options.sort) params.append("sort", options.sort);
+    if (options.order) params.append("order", options.order);
+    if (options.offset !== undefined) params.append("offset", options.offset.toString());
+    if (options.limit !== undefined) params.append("limit", options.limit.toString());
+
+    const queryString = params.toString();
+    const url = `/projects/${projectId}/span_groups${queryString ? `?${queryString}` : ""}`;
+
+    const data = await this.request<SpanGroupSummary[]>({
+      method: "GET",
+      url,
+    });
+
+    // Only return allowed fields
+    return {
+      ...data,
+      body: pickFieldsFromArray<SpanGroupSummary>(
+        data.body || [],
+        ProjectAPI.spanGroupFields,
+      ),
+    };
   }
 }

@@ -31,6 +31,7 @@ const mockProjectAPI = {
   listReleases: vi.fn(),
   getRelease: vi.fn(),
   listBuildsInRelease: vi.fn(),
+  listProjectSpanGroups: vi.fn(),
 } satisfies Omit<ProjectAPI, keyof BaseAPI>;
 
 const mockCache = {
@@ -1355,6 +1356,107 @@ describe("BugsnagClient", () => {
       });
     });
 
+    describe("listProjectSpanGroups", () => {
+      const mockSpanGroups = [
+        {
+          id: "span-group-1",
+          category: "http",
+          name: "GET /users",
+          first_seen: "2023-01-01T00:00:00Z",
+          last_seen: "2023-01-01T12:00:00Z",
+          span_count: 100,
+          error_count: 5,
+          average_duration: 250.5,
+          p95_duration: 500.0,
+          p99_duration: 750.0,
+        },
+        {
+          id: "span-group-2",
+          category: "db",
+          name: "database_query",
+          first_seen: "2023-01-01T01:00:00Z",
+          last_seen: "2023-01-01T11:00:00Z",
+          span_count: 200,
+          error_count: 2,
+          average_duration: 150.3,
+          p95_duration: 300.0,
+          p99_duration: 450.0,
+        },
+      ];
+
+      it("should return span groups from API", async () => {
+        mockProjectAPI.listProjectSpanGroups.mockResolvedValue({
+          body: mockSpanGroups,
+          headers: new Headers(),
+          status: 200,
+        });
+
+        const result = await client.listProjectSpanGroups("proj-1");
+
+        expect(mockProjectAPI.listProjectSpanGroups).toHaveBeenCalledWith(
+          "proj-1",
+          {},
+        );
+        expect(result.body).toEqual(mockSpanGroups);
+      });
+
+      it("should return span groups with filter options", async () => {
+        mockProjectAPI.listProjectSpanGroups.mockResolvedValue({
+          body: [mockSpanGroups[0]],
+          headers: new Headers(),
+          status: 200,
+        });
+
+        const options = {
+          category: "http",
+          name: "GET /users",
+          sort: "error_count",
+          order: "desc",
+          offset: 10,
+          limit: 20,
+        };
+
+        const result = await client.listProjectSpanGroups("proj-1", options);
+
+        expect(mockProjectAPI.listProjectSpanGroups).toHaveBeenCalledWith(
+          "proj-1",
+          options,
+        );
+        expect(result.body).toEqual([mockSpanGroups[0]]);
+      });
+
+      it("should return empty array when no span groups found", async () => {
+        mockProjectAPI.listProjectSpanGroups.mockResolvedValue({
+          body: null,
+          headers: new Headers(),
+          status: 200,
+        });
+
+        const result = await client.listProjectSpanGroups("proj-1");
+
+        expect(mockProjectAPI.listProjectSpanGroups).toHaveBeenCalledWith(
+          "proj-1",
+          {},
+        );
+        expect(result.body).toBeNull();
+      });
+
+      it("should handle API errors gracefully", async () => {
+        mockProjectAPI.listProjectSpanGroups.mockRejectedValue(
+          new Error("API Error"),
+        );
+
+        await expect(
+          client.listProjectSpanGroups("proj-1"),
+        ).rejects.toThrow("API Error");
+
+        expect(mockProjectAPI.listProjectSpanGroups).toHaveBeenCalledWith(
+          "proj-1",
+          {},
+        );
+      });
+    });
+
     describe("getEventById", () => {
       it("should find event across multiple projects", async () => {
         const mockOrgs = [{ id: "org-1", name: "Test Org" }];
@@ -1450,6 +1552,7 @@ describe("BugsnagClient", () => {
       expect(registeredTools).toContain("Get Build");
       expect(registeredTools).toContain("List Releases");
       expect(registeredTools).toContain("Get Release");
+      expect(registeredTools).toContain("List Span Groups");
     });
   });
 
