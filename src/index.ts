@@ -7,6 +7,7 @@ import { SmartBearMcpServer } from "./common/server.js";
 import { PactflowClient } from "./pactflow/client.js";
 import { QmetryClient } from "./qmetry/client.js";
 import { ReflectClient } from "./reflect/client.js";
+import { SmartBearClient } from "./smartbear/client.js";
 import { ZephyrClient } from "./zephyr/client.js";
 
 // This is used to report errors in the MCP server itself
@@ -32,6 +33,8 @@ async function main() {
   const zephyrBaseUrl = process.env.ZEPHYR_BASE_URL;
 
   let client_defined = false;
+  let bugsnagClient: BugsnagClient | null = null;
+  let apiHubClient: ApiHubClient | null = null;
 
   if (reflectToken) {
     server.addClient(new ReflectClient(reflectToken));
@@ -39,7 +42,7 @@ async function main() {
   }
 
   if (bugsnagToken) {
-    const bugsnagClient = new BugsnagClient(
+    bugsnagClient = new BugsnagClient(
       bugsnagToken,
       process.env.BUGSNAG_PROJECT_API_KEY,
       process.env.BUGSNAG_ENDPOINT,
@@ -50,8 +53,14 @@ async function main() {
   }
 
   if (apiHubToken) {
-    server.addClient(new ApiHubClient(apiHubToken));
+    apiHubClient = new ApiHubClient(apiHubToken);
+    server.addClient(apiHubClient);
     client_defined = true;
+  }
+
+  // Add SmartBear client for cross-product integrations when both BugSnag and API Hub are available
+  if (bugsnagClient && apiHubClient) {
+    server.addClient(new SmartBearClient(bugsnagClient, apiHubClient));
   }
 
   if (pactBrokerUrl) {
