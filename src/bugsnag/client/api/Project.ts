@@ -250,13 +250,47 @@ export interface SpanGroupSummary {
   id: string;
   category: string;
   name: string;
-  first_seen: string;
-  last_seen: string;
-  span_count: number;
-  error_count: number;
-  average_duration: number;
-  p95_duration: number;
-  p99_duration: number;
+  display_name: string;
+  is_starred: boolean;
+  properties?: {
+    network?: {
+      request?: {
+        http_method?: string;
+        domain?: string;
+        endpoint?: string;
+      };
+    };
+  };
+  statistics?: {
+    duration_statistics?: {
+      p50?: number;
+      p75?: number;
+      p90?: number;
+      p95?: number;
+      p99?: number;
+    };
+    total_spans?: number;
+    estimated_spans?: number;
+    last_seen?: string;
+    http_statistics?: {
+      response_codes?: {
+        total_spans?: number;
+        codes_1xx?: number;
+        codes_2xx?: number;
+        codes_3xx?: number;
+        codes_4xx?: number;
+        codes_5xx?: number;
+      };
+    };
+  };
+  // Legacy fields for backward compatibility
+  first_seen?: string;
+  last_seen?: string;
+  span_count?: number;
+  error_count?: number;
+  average_duration?: number;
+  p95_duration?: number;
+  p99_duration?: number;
 }
 
 export type ListProjectSpanGroupsResponse = SpanGroupSummary[];
@@ -315,6 +349,10 @@ export class ProjectAPI extends BaseAPI {
     "id",
     "category",
     "name",
+    "display_name",
+    "is_starred",
+    "properties",
+    "statistics",
     "first_seen",
     "last_seen",
     "span_count",

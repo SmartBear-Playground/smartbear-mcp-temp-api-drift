@@ -28,11 +28,42 @@ export class ApiDriftDetector {
     const endpoints: ApiEndpoint[] = [];
 
     for (const spanGroup of spanGroups) {
-      // Parse the span group name to extract method and path
-      // Common formats: "GET /users", "POST /api/v1/users", "PUT /users/{id}"
+      // First, try to extract from the structured properties if available
+      if (spanGroup.properties?.network?.request) {
+        const request = spanGroup.properties.network.request;
+        if (request.http_method && request.endpoint) {
+          const method = request.http_method.toUpperCase();
+          const path = request.endpoint.startsWith('/') 
+            ? request.endpoint 
+            : `/${request.endpoint}`;
+          
+          endpoints.push({
+            method,
+            path: this.normalizePath(path),
+            source: "bugsnag",
+          });
+          continue;
+        }
+      }
+
+      // Fallback: Parse the span group name
+      // Format: "[HTTP]localhost/api/todos|GET" or "GET /users"
       const name = spanGroup.name || "";
-      const match = name.match(/^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+(.+)$/i);
       
+      // Try pattern: [HTTP]domain/path|METHOD
+      let match = name.match(/\[HTTP\][^/]*\/(.+)\|(\w+)$/i);
+      if (match) {
+        const [, path, method] = match;
+        endpoints.push({
+          method: method.toUpperCase(),
+          path: this.normalizePath(path),
+          source: "bugsnag",
+        });
+        continue;
+      }
+
+      // Try pattern: METHOD /path
+      match = name.match(/^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+(.+)$/i);
       if (match) {
         const [, method, path] = match;
         endpoints.push({
@@ -43,7 +74,13 @@ export class ApiDriftDetector {
       }
     }
 
-    return this.deduplicateEndpoints(endpoints);
+    // TEMPORARY: Filter out endpoints with empty paths (catch-all routes like /*)
+    // These may be error handlers or fallback routes that should be handled differently
+    const filteredEndpoints = endpoints.filter(endpoint => {
+      return endpoint.path !== '' && endpoint.path !== '/*';
+    });
+
+    return this.deduplicateEndpoints(filteredEndpoints);
   }
 
   /**
@@ -268,6 +305,29 @@ export class ApiDriftDetector {
 
     if (report.bugsnag_only_endpoints.length === 0 && report.api_hub_only_endpoints.length === 0) {
       lines.push("✅ No API drift detected - all endpoints are synchronized.");
+    } else {
+      // Add recommended next steps based on findings
+      lines.push("Recommended Next Steps:");
+      lines.push("=".repeat(50));
+      lines.push("");
+
+      if (report.bugsnag_only_endpoints.length > 0) {
+        lines.push("Recommended actions:");
+        lines.push("");
+        lines.push("1. Review and Update OpenAPI Document:");
+        lines.push("   - Review the OpenAPI document and implementation code");
+        lines.push("   - Add any newly discovered endpoints to the OpenAPI description");
+        lines.push("   - Ensure the API definition accurately reflects production usage");
+        lines.push("   - Publish a new version, ensuring to increment the version number first");
+        lines.push("");
+        lines.push("2. Review Consumer Pact Tests:");
+        lines.push("   - Check test coverage for each undocumented endpoint (method, path)");
+        lines.push("   - For missing scenarios, use SmartBear's MCP tools to generate Pact tests:");
+        lines.push("     • Use 'generate_pact_tests' with request/response examples");
+        lines.push("     • Include the updated OpenAPI document for context");
+        lines.push("     • Ensure tests cover authentication, error scenarios, and edge cases");
+        lines.push("");
+      }
     }
 
     return lines.join("\n");

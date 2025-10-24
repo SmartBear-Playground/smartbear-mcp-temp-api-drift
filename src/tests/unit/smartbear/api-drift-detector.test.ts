@@ -30,28 +30,44 @@ describe("ApiDriftDetector", () => {
       // Test extracting endpoints from BugSnag span groups
       const spanGroups = [
         {
-          id: "1",
+          id: "1.network.[HTTP]localhost/users|GET",
           category: "network",
-          name: "GET /users",
-          first_seen: "2025-01-01T00:00:00Z",
-          last_seen: "2025-01-23T00:00:00Z",
-          span_count: 100,
-          error_count: 5,
-          average_duration: 250,
-          p95_duration: 500,
-          p99_duration: 750,
+          name: "[HTTP]localhost/users|GET",
+          display_name: "GET localhost/users",
+          is_starred: false,
+          properties: {
+            network: {
+              request: {
+                http_method: "get",
+                domain: "localhost",
+                endpoint: "users"
+              }
+            }
+          },
+          statistics: {
+            total_spans: 100,
+            last_seen: "2025-01-23T00:00:00Z"
+          }
         },
         {
-          id: "2",
+          id: "2.network.[HTTP]localhost/users/123/settings|POST",
           category: "network",
-          name: "POST /users/{param}/settings",
-          first_seen: "2025-01-01T00:00:00Z",
-          last_seen: "2025-01-23T00:00:00Z",
-          span_count: 50,
-          error_count: 2,
-          average_duration: 300,
-          p95_duration: 600,
-          p99_duration: 900,
+          name: "[HTTP]localhost/users/123/settings|POST",
+          display_name: "POST localhost/users/{param}/settings",
+          is_starred: false,
+          properties: {
+            network: {
+              request: {
+                http_method: "post",
+                domain: "localhost",
+                endpoint: "users/123/settings"
+              }
+            }
+          },
+          statistics: {
+            total_spans: 50,
+            last_seen: "2025-01-23T00:00:00Z"
+          }
         },
       ];
 
@@ -104,16 +120,24 @@ describe("ApiDriftDetector", () => {
         headers: new Headers(),
         body: [
           {
-            id: "1",
+            id: "1.network.[HTTP]localhost/users|GET",
             category: "network",
-            name: "GET /users",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 100,
-            error_count: 2,
-            average_duration: 150,
-            p95_duration: 300,
-            p99_duration: 500,
+            name: "[HTTP]localhost/users|GET",
+            display_name: "GET localhost/users",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "get",
+                  domain: "localhost",
+                  endpoint: "users"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 100,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
         ],
       };
@@ -197,28 +221,44 @@ describe("ApiDriftDetector", () => {
         headers: new Headers(),
         body: [
           {
-            id: "1",
+            id: "1.network.[HTTP]localhost/api/v1/users/123|GET",
             category: "network",
-            name: "GET /api/v1/users/123",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 50,
-            error_count: 0,
-            average_duration: 100,
-            p95_duration: 200,
-            p99_duration: 300,
+            name: "[HTTP]localhost/api/v1/users/123|GET",
+            display_name: "GET localhost/api/v1/users/123",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "get",
+                  domain: "localhost",
+                  endpoint: "api/v1/users/123"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 50,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
           {
-            id: "2",
+            id: "2.network.[HTTP]localhost/users/456/posts|POST",
             category: "network",
-            name: "POST /users/:userId/posts",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 30,
-            error_count: 1,
-            average_duration: 200,
-            p95_duration: 400,
-            p99_duration: 600,
+            name: "[HTTP]localhost/users/456/posts|POST",
+            display_name: "POST localhost/users/{userId}/posts",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "post",
+                  domain: "localhost",
+                  endpoint: "users/456/posts"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 30,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
         ],
       };
@@ -251,40 +291,46 @@ describe("ApiDriftDetector", () => {
         headers: new Headers(),
         body: [
           {
-            id: "1",
+            id: "1.network.[HTTP]localhost/users|GET",
             category: "network",
-            name: "GET /users",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 100,
-            error_count: 0,
-            average_duration: 150,
-            p95_duration: 300,
-            p99_duration: 500,
+            name: "[HTTP]localhost/users|GET",
+            display_name: "GET localhost/users",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "get",
+                  domain: "localhost",
+                  endpoint: "users"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 100,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
           {
-            id: "2",
+            id: "2.db.SELECT",
             category: "db",
             name: "SELECT * FROM users",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 200,
-            error_count: 0,
-            average_duration: 50,
-            p95_duration: 100,
-            p99_duration: 150,
+            display_name: "SELECT * FROM users",
+            is_starred: false,
+            statistics: {
+              total_spans: 200,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
           {
-            id: "3",
+            id: "3.custom.process_data",
             category: "custom",
             name: "process_data",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 50,
-            error_count: 0,
-            average_duration: 250,
-            p95_duration: 500,
-            p99_duration: 750,
+            display_name: "process_data",
+            is_starred: false,
+            statistics: {
+              total_spans: 50,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
         ],
       };
@@ -382,89 +428,136 @@ describe("ApiDriftDetector", () => {
         headers: new Headers(),
         body: [
           { 
-            id: "1",
+            id: "1.network.[HTTP]localhost/api/users|GET",
             category: "network", 
-            name: "GET /api/users",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 100,
-            error_count: 0,
-            average_duration: 150,
-            p95_duration: 300,
-            p99_duration: 500,
+            name: "[HTTP]localhost/api/users|GET",
+            display_name: "GET localhost/api/users",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "get",
+                  domain: "localhost",
+                  endpoint: "api/users"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 100,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
           { 
-            id: "2",
+            id: "2.network.[HTTP]localhost/api/v1/users/123|POST",
             category: "network", 
-            name: "POST /api/v1/users/{id}",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 50,
-            error_count: 1,
-            average_duration: 250,
-            p95_duration: 500,
-            p99_duration: 800,
+            name: "[HTTP]localhost/api/v1/users/123|POST",
+            display_name: "POST localhost/api/v1/users/{id}",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "post",
+                  domain: "localhost",
+                  endpoint: "api/v1/users/123"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 50,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
           { 
-            id: "3",
+            id: "3.network.[HTTP]localhost/users/profile|PUT",
             category: "network", 
-            name: "put /users/profile",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 30,
-            error_count: 0,
-            average_duration: 180,
-            p95_duration: 360,
-            p99_duration: 540,
-          }, // lowercase
-          { 
-            id: "4",
-            category: "network", 
-            name: "DELETE /admin/users/123/disable",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 10,
-            error_count: 0,
-            average_duration: 300,
-            p95_duration: 600,
-            p99_duration: 900,
+            name: "[HTTP]localhost/users/profile|PUT",
+            display_name: "PUT localhost/users/profile",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "put",
+                  domain: "localhost",
+                  endpoint: "users/profile"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 30,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
           { 
-            id: "5",
+            id: "4.network.[HTTP]localhost/admin/users/123/disable|DELETE",
             category: "network", 
-            name: "PATCH /users",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 20,
-            error_count: 0,
-            average_duration: 200,
-            p95_duration: 400,
-            p99_duration: 600,
+            name: "[HTTP]localhost/admin/users/123/disable|DELETE",
+            display_name: "DELETE localhost/admin/users/123/disable",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "delete",
+                  domain: "localhost",
+                  endpoint: "admin/users/123/disable"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 10,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
           },
           { 
-            id: "6",
+            id: "5.network.[HTTP]localhost/users|PATCH",
+            category: "network", 
+            name: "[HTTP]localhost/users|PATCH",
+            display_name: "PATCH localhost/users",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "patch",
+                  domain: "localhost",
+                  endpoint: "users"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 20,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
+          },
+          { 
+            id: "6.network.invalid",
             category: "network", 
             name: "invalid format",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 5,
-            error_count: 0,
-            average_duration: 100,
-            p95_duration: 200,
-            p99_duration: 300,
-          }, // should be ignored
+            display_name: "invalid format",
+            is_starred: false,
+            statistics: {
+              total_spans: 5,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
+          }, // should be ignored - no properties
           { 
-            id: "7",
+            id: "7.network.[HTTP]localhost/external/api|GET",
             category: "network", 
-            name: "GET /external/api",
-            first_seen: "2025-01-01T00:00:00Z",
-            last_seen: "2025-01-23T00:00:00Z",
-            span_count: 15,
-            error_count: 0,
-            average_duration: 500,
-            p95_duration: 1000,
-            p99_duration: 1500,
-          }, // network category
+            name: "[HTTP]localhost/external/api|GET",
+            display_name: "GET localhost/external/api",
+            is_starred: false,
+            properties: {
+              network: {
+                request: {
+                  http_method: "get",
+                  domain: "localhost",
+                  endpoint: "external/api"
+                }
+              }
+            },
+            statistics: {
+              total_spans: 15,
+              last_seen: "2025-01-23T00:00:00Z"
+            }
+          },
         ],
       };
 
